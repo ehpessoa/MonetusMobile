@@ -1,0 +1,7 @@
+{
+  "name": "Monetus Mobile",
+  "description": "Um MVP de finanças pessoais mobile-first impulsionado pelo Gemini para leitura inteligente de recibos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
