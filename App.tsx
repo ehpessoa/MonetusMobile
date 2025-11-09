@@ -5,13 +5,15 @@ import DashboardScreen from './screens/DashboardScreen';
 import TransactionsScreen from './screens/TransactionsScreen';
 import GoalsScreen from './screens/GoalsScreen';
 import AuthScreen from './screens/AuthScreen';
+import SyncModal from './components/SyncModal';
 import { useFinanceData } from './hooks/useFinanceData';
 import { useAuth } from './hooks/useAuth';
 import { AppTab } from './types';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, RefreshCw } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<AppTab>(AppTab.TRANSACTIONS);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const auth = useAuth();
   // Pass userId to finance hook to ensure data isolation. 
   // If null, it will load nothing, but we won't render main app anyway.
@@ -60,29 +62,46 @@ const App: React.FC = () => {
          while taking full width on actual mobile devices due to standard viewport meta.
        */}
       
-      {/* Mini Header for User Info & Logout */}
+      {/* Mini Header for User Info, Sync & Logout */}
       {auth.user.isDemo && (
         <div className="bg-amber-100 text-amber-800 text-xs text-center py-1 font-medium">
            Modo Demonstração
         </div>
       )}
       <div className="bg-white px-4 py-2 flex justify-between items-center border-b border-gray-100">
-          <span className="text-xs font-semibold text-gray-500 truncate max-w-[200px]">
+          <span className="text-xs font-semibold text-gray-500 truncate max-w-[150px]">
               Olá, {auth.user.name.split(' ')[0]}
           </span>
-          <button 
-            onClick={auth.logout}
-            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-            title="Sair"
-          >
-              <LogOut size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+              <button
+                  onClick={() => setIsSyncModalOpen(true)}
+                  className="text-secondary/80 hover:text-secondary transition-colors p-1.5 bg-secondary/5 rounded-full"
+                  title="Sincronizar Dispositivos"
+              >
+                  <RefreshCw size={16} />
+              </button>
+              <div className="h-4 w-px bg-gray-200 mx-1"></div>
+              <button 
+                onClick={auth.logout}
+                className="text-gray-400 hover:text-red-500 transition-colors p-1.5"
+                title="Sair"
+              >
+                  <LogOut size={16} />
+              </button>
+          </div>
       </div>
 
       <main className="flex-1 overflow-hidden relative">
         {renderScreen()}
       </main>
       <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
+
+      <SyncModal 
+          isOpen={isSyncModalOpen} 
+          onClose={() => setIsSyncModalOpen(false)}
+          getSyncData={financeData.getSyncData}
+          mergeSyncData={financeData.mergeSyncData}
+      />
     </div>
   );
 };

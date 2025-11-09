@@ -127,6 +127,42 @@ export const useFinanceData = (userId: string | null) => {
     return { income, expense, balance: income - expense };
   }, [transactions]);
 
+  // --- SYNC METHODS ---
+  const getSyncData = useCallback(() => {
+    return {
+      transactions,
+      categories,
+      goals
+    };
+  }, [transactions, categories, goals]);
+
+  const mergeSyncData = useCallback((remoteData: any) => {
+      if (!remoteData || !remoteData.transactions || !remoteData.categories) {
+          console.error("Dados de sincronização inválidos recebidos.");
+          return false;
+      }
+
+      // Helper to merge lists by ID (preferring existing if conflict, or could prefer remote. 
+      // For simple sync, union by ID is usually enough if we assume no concurrent edits of SAME item)
+      const mergeLists = <T extends { id: string }>(local: T[], remote: T[]) => {
+          const map = new Map(local.map(i => [i.id, i]));
+          // We might want remote to overwrite local if we assume 'sync' means 'get latest', 
+          // but without timestamps, let's just ensure we have ALL items from both.
+          // If we want remote to win conflicts:
+          remote.forEach(i => map.set(i.id, i));
+          return Array.from(map.values());
+      };
+
+      setCategories(prev => mergeLists<CategoryItem>(prev, remoteData.categories));
+      setGoals(prev => mergeLists<GoalEntry>(prev, remoteData.goals || []));
+      setTransactions(prev => {
+          const merged = mergeLists<TransactionEntry>(prev, remoteData.transactions);
+          return merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      });
+      
+      return true;
+  }, []);
+
   return {
     transactions,
     categories,
@@ -139,6 +175,8 @@ export const useFinanceData = (userId: string | null) => {
     deleteGoal,
     addCategory,
     getBalance,
-    getSummary
+    getSummary,
+    getSyncData,
+    mergeSyncData
   };
 };
